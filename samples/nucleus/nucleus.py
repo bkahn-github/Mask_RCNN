@@ -42,6 +42,7 @@ import datetime
 import numpy as np
 import skimage.io
 from imgaug import augmenters as iaa
+from tqdm import tqdm
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -376,7 +377,8 @@ def detect(model, dataset_dir, subset):
     dataset.prepare()
     # Load over images
     submission = []
-    for image_id in dataset.image_ids:
+    for i in tqdm(range(len(dataset.image_ids))): 
+        image_id = dataset.image_ids[i]
         # Load image and run detection
         image = dataset.load_image(image_id)
         # Detect objects
@@ -385,13 +387,6 @@ def detect(model, dataset_dir, subset):
         source_id = dataset.image_info[image_id]["id"]
         rle = mask_to_rle(source_id, r["masks"], r["scores"])
         submission.append(rle)
-        # Save image with masks
-        visualize.display_instances(
-            image, r['rois'], r['masks'], r['class_ids'],
-            dataset.class_names, r['scores'],
-            show_bbox=False, show_mask=False,
-            title="Predictions")
-        plt.savefig("{}/{}.png".format(submit_dir, dataset.image_info[image_id]["id"]))
 
     # Save to csv file
     submission = "ImageId,EncodedPixels\n" + "\n".join(submission)
