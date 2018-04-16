@@ -425,6 +425,14 @@ def detect(model, dataset_dir, subset):
         source_id = dataset.image_info[image_id]["id"]
         rle = mask_to_rle(source_id, r["masks"], r["scores"])
         submission.append(rle)
+       
+        visualize.display_instances(
+            image, r['rois'], r['masks'], r['class_ids'],
+            dataset.class_names, r['scores'],
+            show_bbox=False, show_mask=False,
+            title="Predictions")
+        plt.savefig("{}/{}.png".format(submit_dir, dataset.image_info[image_id]["id"]))
+
 
     # Save to csv file
     submission = "ImageId,EncodedPixels\n" + "\n".join(submission)
