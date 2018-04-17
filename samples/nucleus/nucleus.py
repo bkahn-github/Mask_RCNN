@@ -338,7 +338,7 @@ def mask_to_rle(image_id, mask, scores):
     assert mask.ndim == 3, "Mask must be [H, W, count]"
     # If mask is empty, return line with image ID only
     if mask.shape[-1] == 0:
-        return "{},".format(image_id)
+        return "{}, {}".format(image_id, '1 1')
     # Remove mask overlaps
     # Multiply each instance mask by its score order
     # then take the maximum across the last dimension
