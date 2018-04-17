@@ -101,107 +101,69 @@ VAL_IMAGE_IDS = [
 ############################################################
 
 class NucleusConfig(Config):
+    """Configuration for training on the nucleus segmentation dataset."""
+    # Give the configuration a recognizable name
     NAME = "nucleus"
-      
-    LEARNING_RATE = 1e-2
-    
-    USE_MINI_MASK = True
-    MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
-    
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 2
-    STEPS_PER_EPOCH = 300
-    VALIDATION_STEPS = 70
 
-    NUM_CLASSES = 1 + 1  # background + nucleis
+    # Adjust depending on your GPU memory
+    IMAGES_PER_GPU = 6
+
+    # Number of classes (including background)
+    NUM_CLASSES = 1 + 1  # Background + nucleus
+
+    # Number of training and validation steps per epoch
+    STEPS_PER_EPOCH = (657 - len(VAL_IMAGE_IDS)) // IMAGES_PER_GPU
+    VALIDATION_STEPS = max(1, len(VAL_IMAGE_IDS) // IMAGES_PER_GPU)
+
+    # Don't exclude based on confidence. Since we have two classes
+    # then 0.5 is the minimum anyway as it picks between nucleus and BG
+    DETECTION_MIN_CONFIDENCE = 0
+
+    # Backbone network architecture
+    # Supported values are: resnet50, resnet101
+    BACKBONE = "resnet50"
+
+    # Input image resizing
+    # Random crops of size 512x512
+    IMAGE_RESIZE_MODE = "crop"
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    IMAGE_PADDING = True  # currently, the False option is not supported
-    RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)  # anchor side in pixels, maybe add a 256?
-    BACKBONE_STRIDES = [4, 8, 16, 32, 64]
-    RPN_TRAIN_ANCHORS_PER_IMAGE = 320 #300
-    
-    POST_NMS_ROIS_TRAINING = 2000
+    IMAGE_MIN_SCALE = 2.0
+
+    # Length of square anchor side in pixels
+    RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
+
+    # ROIs kept after non-maximum supression (training and inference)
+    POST_NMS_ROIS_TRAINING = 1000
     POST_NMS_ROIS_INFERENCE = 2000
-    POOL_SIZE = 7
-    MASK_POOL_SIZE = 14
-    MASK_SHAPE = [28, 28]
-    TRAIN_ROIS_PER_IMAGE = 512
-    RPN_NMS_THRESHOLD = 0.7
-    MAX_GT_INSTANCES = 256
-    DETECTION_MAX_INSTANCES = 400 
 
-    DETECTION_MIN_CONFIDENCE = 0.7 # may be smaller?
-    DETECTION_NMS_THRESHOLD = 0.3 # 0.3
-   
-    MEAN_PIXEL = np.array([0.,0.,0.])
-    
-    WEIGHT_DECAY = 0.0001
-       
-       
-#     """Configuration for training on the nucleus segmentation dataset."""
-#     # Give the configuration a recognizable name
-#     NAME = "nucleus"
+    # Non-max suppression threshold to filter RPN proposals.
+    # You can increase this during training to generate more propsals.
+    RPN_NMS_THRESHOLD = 0.9
 
-#     # Adjust depending on your GPU memory
-#     IMAGES_PER_GPU = 6
+    # How many anchors per image to use for RPN training
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 64
 
-#     # Number of classes (including background)
-#     NUM_CLASSES = 1 + 1  # Background + nucleus
+    # Image mean (RGB)
+    MEAN_PIXEL = np.array([43.53, 39.56, 48.22])
 
-#     # Number of training and validation steps per epoch
-#     STEPS_PER_EPOCH = (657 - len(VAL_IMAGE_IDS)) // IMAGES_PER_GPU
-#     VALIDATION_STEPS = max(1, len(VAL_IMAGE_IDS) // IMAGES_PER_GPU)
+    # If enabled, resizes instance masks to a smaller size to reduce
+    # memory load. Recommended when using high-resolution images.
+    USE_MINI_MASK = True
+    MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
 
-#     # Don't exclude based on confidence. Since we have two classes
-#     # then 0.5 is the minimum anyway as it picks between nucleus and BG
-#     DETECTION_MIN_CONFIDENCE = 0
+    # Number of ROIs per image to feed to classifier/mask heads
+    # The Mask RCNN paper uses 512 but often the RPN doesn't generate
+    # enough positive proposals to fill this and keep a positive:negative
+    # ratio of 1:3. You can increase the number of proposals by adjusting
+    # the RPN NMS threshold.
+    TRAIN_ROIS_PER_IMAGE = 128
 
-#     # Backbone network architecture
-#     # Supported values are: resnet50, resnet101
-#     BACKBONE = "resnet50"
+    # Maximum number of ground truth instances to use in one image
+    MAX_GT_INSTANCES = 200
 
-#     # Input image resizing
-#     # Random crops of size 512x512
-#     IMAGE_RESIZE_MODE = "crop"
-#     IMAGE_MIN_DIM = 512
-#     IMAGE_MAX_DIM = 512
-#     IMAGE_MIN_SCALE = 2.0
-
-#     # Length of square anchor side in pixels
-#     RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
-
-#     # ROIs kept after non-maximum supression (training and inference)
-#     POST_NMS_ROIS_TRAINING = 1000
-#     POST_NMS_ROIS_INFERENCE = 2000
-
-#     # Non-max suppression threshold to filter RPN proposals.
-#     # You can increase this during training to generate more propsals.
-#     RPN_NMS_THRESHOLD = 0.9
-
-#     # How many anchors per image to use for RPN training
-#     RPN_TRAIN_ANCHORS_PER_IMAGE = 64
-
-#     # Image mean (RGB)
-#     MEAN_PIXEL = np.array([43.53, 39.56, 48.22])
-
-#     # If enabled, resizes instance masks to a smaller size to reduce
-#     # memory load. Recommended when using high-resolution images.
-#     USE_MINI_MASK = True
-#     MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
-
-#     # Number of ROIs per image to feed to classifier/mask heads
-#     # The Mask RCNN paper uses 512 but often the RPN doesn't generate
-#     # enough positive proposals to fill this and keep a positive:negative
-#     # ratio of 1:3. You can increase the number of proposals by adjusting
-#     # the RPN NMS threshold.
-#     TRAIN_ROIS_PER_IMAGE = 128
-
-#     # Maximum number of ground truth instances to use in one image
-#     MAX_GT_INSTANCES = 200
-
-#     # Max number of final detections per image
-#     DETECTION_MAX_INSTANCES = 400
+    # Max number of final detections per image
+    DETECTION_MAX_INSTANCES = 400
 
 
 class NucleusInferenceConfig(NucleusConfig):
